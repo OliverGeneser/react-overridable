@@ -36,24 +36,32 @@ export function parametrize(Component, extraProps) {
 /**
  * React component to enable overriding children when rendering.
  */
-function Overridable({id, children, ...restProps}) {
+const Overridable = React.forwardRef(function Overridable(
+  {id = null, children = null, ...restProps},
+  ref
+) {
   const overriddenComponents = useContext(OverridableContext);
   const child = children ? React.Children.only(children) : null;
   const childProps = child ? child.props : {};
+  const refProps = ref ? {ref} : {};
 
   if (id in overriddenComponents) {
     // If there's an override, we replace the component's content with the override + props
     const Overridden = overriddenComponents[id];
-    const element = React.createElement(Overridden, {...childProps, ...restProps});
+    const element = React.createElement(Overridden, {
+      ...childProps,
+      ...restProps,
+      ...refProps,
+    });
     return <DevModeWrapper id={id}>{element}</DevModeWrapper>;
   } else if (child) {
     // No override? Clone the Overridable component's original children
-    const element = React.cloneElement(child, childProps);
+    const element = React.cloneElement(child, {...childProps, ...refProps});
     return <DevModeWrapper id={id}>{element}</DevModeWrapper>;
   } else {
     return null;
   }
-}
+});
 
 Overridable.propTypes = {
   /** The children of the component */
@@ -62,25 +70,17 @@ Overridable.propTypes = {
   id: PropTypes.string,
 };
 
-Overridable.defaultProps = {
-  id: null,
-  children: null,
-};
-
 /**
  * High-order component to override an existing React component and provide a new component instead.
  */
 Overridable.component = (id, Component) => {
-  const Overridden = ({children, ...props}) => {
+  const Overridden = ({children = null, ...props}) => {
     const overriddenComponents = useContext(OverridableContext);
     const overriddenComponent = overriddenComponents[id];
     return React.createElement(overriddenComponent || Component, props, children);
   };
   Overridden.propTypes = {
     children: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
-  };
-  Overridden.defaultProps = {
-    children: null,
   };
   const name = Component.displayName || Component.name;
   Overridden.displayName = `Overridable(${name})`;
