@@ -45,7 +45,9 @@ const Overridable = React.forwardRef(({id, children, ...restProps}, ref) => {
     // If there's an override, we replace the component's content with the override + props
     const Overridden = overriddenComponents[id];
     const props = {...childProps, ...restProps};
-    if (ref) props.ref = ref;
+    if (ref) {
+      props.ref = ref;
+    }
     const element = React.createElement(Overridden, props);
     return <DevModeWrapper id={id}>{element}</DevModeWrapper>;
   } else if (child) {
@@ -56,6 +58,8 @@ const Overridable = React.forwardRef(({id, children, ...restProps}, ref) => {
     return null;
   }
 });
+
+Overridable.displayName = 'Overridable';
 
 Overridable.propTypes = {
   /** The children of the component */
